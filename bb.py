@@ -178,7 +178,7 @@ print(table)
 
 valoresFO = {}
 
-def verificar_y_restringir(modelo, arcos_reales, M,F, x):
+def verificar_y_restringir(iteracion, modelo, arcos_reales, M,F, x):
     """Restringe ciclos que exceden 12 horas,300 fotos y que no pasan por el hangar"""
     contador = 0
     while True:
@@ -187,7 +187,7 @@ def verificar_y_restringir(modelo, arcos_reales, M,F, x):
         ciclos = list(nx.simple_cycles(G))
     
         nx.draw(G, with_labels = True)
-        plt.savefig("filename" + str(contador) +".png")
+        plt.savefig(str(iteracion)+"_filename_" + str(contador) +".png")
         plt.clf()
         for i in range(len(ciclos)):
             ciclos[i].append(ciclos[i][0])
@@ -237,15 +237,15 @@ def verificar_y_restringir(modelo, arcos_reales, M,F, x):
 #----------------------------------------------
 
 arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0]
-
+Iteracion = 0
 while True:
     # Guardar la solución actual
     
     solucion_anterior = [(i, j) for i, j in A if x[i, j].x > 0]
     
     # Aplicar las funciones de restricción
-    verificar_y_restringir(m, arcos_reales,M, F, x)
-
+    verificar_y_restringir(Iteracion, m, arcos_reales,M, F, x)
+    Iteracion += 1
     # Verificar si la solución ha cambiado
     arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0] 
     if arcos_reales == solucion_anterior:
