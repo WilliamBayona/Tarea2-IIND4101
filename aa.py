@@ -171,7 +171,8 @@ def eliminar_subrutas_sin_hangar(modelo, arcos_reales, A, x):
         for ciclo in subrutas_sin_hangar:
             arcos = [(ciclo[i], ciclo[i + 1]) for i in range(len(ciclo) - 1)]
             
-            modelo.addConstr(quicksum(x[a] for a in arcos) <= len(arcos) - 1)
+            #modelo.addConstr(quicksum(x[a] for a in arcos) <= len(arcos) - 1)
+            modelo.addConstr(quicksum(x[k, j] for k in ciclo for j in L if k != 'Hangar' and j not in ciclo)>= 1)
             print(f"Agregando restricción para eliminar subruta: {ciclo}")
 
         modelo.update()
@@ -243,9 +244,8 @@ while True:
     
     # Aplicar las funciones de restricción
     eliminar_subrutas_sin_hangar(m, arcos_reales, A, x)
-    verificar_y_restringir_fotos(m, arcos_reales, F, x)
     verificar_y_restringir_tiempos(m, arcos_reales, M, x)
-
+    verificar_y_restringir_fotos(m, arcos_reales, F, x)
 
 
     

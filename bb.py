@@ -82,7 +82,7 @@ x = m.addVars(A,vtype=GRB.BINARY, name = "x")
 #----------------------------------------------
 
 
-#1
+#1. Todos los lugares deben ser visitados por un dron
 for i in L:
     if i != 'Hangar':
         m.addConstr(quicksum(x[i,j] for j in L if i != j) == 1)
@@ -91,12 +91,12 @@ for j in L:
     if j != 'Hangar':
         m.addConstr(quicksum(x[i,j] for i in L if i != j) == 1)
         
-#2
+#2. Restricción para que los drones salgan y lleguen al hangar
 m.addConstr(quicksum(x['Hangar',j] for j in L if j != 'Hangar') == 5)
 m.addConstr(quicksum(x[i,'Hangar'] for i in L if i != 'Hangar') == 5)
 
 
-#3
+#3. Restricción para evitar ciclos de dos nodos
 for i in L :
     for j in L :
         if i !=j: 
@@ -153,55 +153,60 @@ def nodos_ciclo(ciclo):
 # Funciones Punto B.
 #----------------------------------------------
 
-
-def verificar_y_restringir(modelo, arcos_reales, M, x):
-    """Restringe ciclos que exceden 12 horas."""
+valoresFO = {}
+def verificar_y_restringir(modelo, arcos_reales, M,F, x):
+    """Restringe ciclos que exceden 12 horas,300 fotos y que no pasan por el hangar"""
+    contador = 0
     while True:
         G = nx.DiGraph()
         G.add_edges_from(arcos_reales)
         ciclos = list(nx.simple_cycles(G))
+    
+        nx.draw(G, with_labels = True)
+        plt.savefig("filename" + str(contador) +".png")
+        plt.clf()
         for i in range(len(ciclos)):
             ciclos[i].append(ciclos[i][0])
-
-        ciclos_a_restringir1 = [ciclo for ciclo in ciclos if tiempo_secuencia(ciclo) > 12]
-
-        if not ciclos_a_restringir1:
-            print("Todos los ciclos cumplen con el límite de tiempo de 12 horas.")
             
 
+
+#Restriccion de 300 fotos
+#----------------------------------------------
+        ciclos_a_restringir2 = [ciclo for ciclo in ciclos if cantidad_fotos(ciclo) > 300]
+        for ciclo in ciclos_a_restringir2:
+            modelo.addConstr(quicksum(x[i, j] * F[i] for i in nodos_ciclo(ciclo) for j in nodos_ciclo(ciclo) if i != j) <= 300)
+            print(f"Agregando restricción para ciclo: {ciclo}")
+#----------------------------------------------  
+
+#Restriccion de 12 horas
+#----------------------------------------------
+        ciclos_a_restringir1 = [ciclo for ciclo in ciclos if tiempo_secuencia(ciclo) > 12]      
         for ciclo in ciclos_a_restringir1:
             arcos = [(ciclo[i], ciclo[i + 1]) for i in range(len(ciclo) - 1)]
             modelo.addConstr(quicksum(x[a] * (M[a] / 600 + (1.5 if a[1] != 'Hangar' else 0)) for a in arcos) <= 12)
             print(f"Agregando restricción para ciclo: {ciclo}")
-        
-        ciclos_a_restringir2 = [ciclo for ciclo in ciclos if cantidad_fotos(ciclo) > 300]
+#----------------------------------------------
 
-        if not ciclos_a_restringir2:
-            print("Todos los ciclos cumplen con el límite de 300 fotos.")
-
-        for ciclo in ciclos_a_restringir2:
-            #  Corrección aquí: agregar if i != j
-            modelo.addConstr(quicksum(x[i, j] * F[i] for i in nodos_ciclo(ciclo) for j in nodos_ciclo(ciclo) if i != j) <= 300)
-            print(f"Agregando restricción para ciclo: {ciclo}")
-            
+#Restriccion de Hangar
+#----------------------------------------------
         subrutas_sin_hangar = [ciclo for ciclo in ciclos if 'Hangar' not in ciclo]
-
-        if not subrutas_sin_hangar and not ciclos_a_restringir1 and not ciclos_a_restringir2:
-            print("Todo bien pa")
-
-        for ciclo in subrutas_sin_hangar:
-            arcos = [(ciclo[i], ciclo[i + 1]) for i in range(len(ciclo) - 1)]
-            
-            modelo.addConstr(quicksum(x[a] for a in arcos) <= len(arcos) - 1)
+        for ciclo in subrutas_sin_hangar:           
+            modelo.addConstr(quicksum(x[i, j] for i in ciclo for j in L if i != 'Hangar' and j not in ciclo)>= 1)
             print(f"Agregando restricción para eliminar subruta: {ciclo}")
-            
+#----------------------------------------------
         
-        
+        if not subrutas_sin_hangar and not ciclos_a_restringir1 and not ciclos_a_restringir2:
+            print("Todas las restricciones se cumplen")
+            break     
 
         modelo.update()
         modelo.optimize()
-
+        contador += 1
+        FO = m.getObjective().getValue()
+        valoresFO[contador] = FO
+        
         arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0] 
+
 
 
 #----------------------------------------------
@@ -216,7 +221,7 @@ while True:
     solucion_anterior = [(i, j) for i, j in A if x[i, j].x > 0]
     
     # Aplicar las funciones de restricción
-    verificar_y_restringir(m, arcos_reales, F, x)
+    verificar_y_restringir(m, arcos_reales,M, F, x)
 
     # Verificar si la solución ha cambiado
     arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0] 
@@ -226,3 +231,12 @@ while True:
 # Mostrar la solución final
 print("Funcion Objetivo" , m.getObjective().getValue())
 graficar_tabla(arcos_reales)
+print(valoresFO)
+#graficar la tabla
+plt.plot(valoresFO.keys(), valoresFO.values())
+plt.xlabel("Iteraciones")
+plt.ylabel("Valor de la Función Objetivo")
+plt.title("Valor de la Función Objetivo por Iteración")
+plt.show()
+plt.savefig("Comparativa.png")
+#----------------------------------------------
