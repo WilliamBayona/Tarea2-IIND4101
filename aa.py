@@ -105,7 +105,7 @@ for i in L :
 #F.O
 m.setObjective(quicksum(x[a]*M[a] for a in A),GRB.MINIMIZE)
 m.update()
-#m.setParam("Outputflag",0)
+m.setParam("Outputflag",0)
 m.optimize()
 
 #----------------------------------------------
@@ -150,7 +150,7 @@ def nodos_ciclo(ciclo):
     return nodos
 
 #----------------------------------------------
-# Funciones para manejar las restricciones iterativas
+# Funciones Punto B.
 #----------------------------------------------
 
 def eliminar_subrutas_sin_hangar(modelo, arcos_reales, A, x):
@@ -170,15 +170,17 @@ def eliminar_subrutas_sin_hangar(modelo, arcos_reales, A, x):
 
         for ciclo in subrutas_sin_hangar:
             arcos = [(ciclo[i], ciclo[i + 1]) for i in range(len(ciclo) - 1)]
+            
             modelo.addConstr(quicksum(x[a] for a in arcos) <= len(arcos) - 1)
             print(f"Agregando restricción para eliminar subruta: {ciclo}")
 
         modelo.update()
+        modelo.setParam("Outputflag",0)
         modelo.optimize()
 
         arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0] 
 
-def verificar_y_restringir_ciclos(modelo, arcos_reales, M, x):
+def verificar_y_restringir_tiempos(modelo, arcos_reales, M, x):
     """Restringe ciclos que exceden 12 horas."""
     while True:
         G = nx.DiGraph()
@@ -236,18 +238,23 @@ arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0]
 
 while True:
     # Guardar la solución actual
-    m.update()
+    
     solucion_anterior = [(i, j) for i, j in A if x[i, j].x > 0]
     
     # Aplicar las funciones de restricción
     eliminar_subrutas_sin_hangar(m, arcos_reales, A, x)
-    verificar_y_restringir_ciclos(m, arcos_reales, M, x)
     verificar_y_restringir_fotos(m, arcos_reales, F, x)
+    verificar_y_restringir_tiempos(m, arcos_reales, M, x)
+
+
+
     
+    m.update()
     # Verificar si la solución ha cambiado
     arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0] 
     if arcos_reales == solucion_anterior:
         break
 
 # Mostrar la solución final
+print("Funcion Objetivo" , m.getObjective().getValue())
 graficar_tabla(arcos_reales)
