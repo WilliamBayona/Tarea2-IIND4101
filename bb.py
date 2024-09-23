@@ -108,6 +108,13 @@ m.update()
 m.setParam("Outputflag",0)
 m.optimize()
 
+#---------------------------
+# resultados parte A
+#--------------------------
+
+
+
+
 #----------------------------------------------
 # Funciones auxiliares
 #----------------------------------------------
@@ -149,6 +156,27 @@ def nodos_ciclo(ciclo):
     for i in range(len(ciclo)-1):
         nodos.append(ciclo[i])
     return nodos
+#---------------------------
+# resultados parte A
+#--------------------------
+
+arcos_reales = [(i, j) for i, j in A if x[i, j].x > 0]
+G = nx.DiGraph()
+G.add_edges_from(arcos_reales)
+ciclos = list(nx.simple_cycles(G))
+cantidad_ciclos = len(ciclos)
+table = PrettyTable()
+table.field_names = ["#Ruta", "Secuencia", "Tiempo (Horas)", "Fotos"]
+
+for i in range(cantidad_ciclos):
+    ciclos[i].append(ciclos[i][0])
+
+for i in range(cantidad_ciclos):
+    table.add_row([i+1,ciclos[i],tiempo_secuencia(ciclos[i]) , cantidad_fotos(ciclos[i])])
+FO = m.getObjective().getValue()
+print(FO)
+print(table)
+
 
 #----------------------------------------------
 # Funciones Punto B.
