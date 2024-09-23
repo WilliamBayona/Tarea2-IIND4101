@@ -141,6 +141,7 @@ def graficar_tabla(arcos_reales):
     for i in range(cantidad_ciclos):
         table.add_row([i+1,ciclos[i],tiempo_secuencia(ciclos[i]) , cantidad_fotos(ciclos[i])])
     print(table)
+    plt.savefig("final.png")
     plt.show()
     
 def nodos_ciclo(ciclo):
@@ -154,6 +155,7 @@ def nodos_ciclo(ciclo):
 #----------------------------------------------
 
 valoresFO = {}
+
 def verificar_y_restringir(modelo, arcos_reales, M,F, x):
     """Restringe ciclos que exceden 12 horas,300 fotos y que no pasan por el hangar"""
     contador = 0
@@ -196,7 +198,6 @@ def verificar_y_restringir(modelo, arcos_reales, M,F, x):
 #----------------------------------------------
         
         if not subrutas_sin_hangar and not ciclos_a_restringir1 and not ciclos_a_restringir2:
-            print("Todas las restricciones se cumplen")
             break     
 
         modelo.update()
@@ -237,6 +238,7 @@ plt.plot(valoresFO.keys(), valoresFO.values())
 plt.xlabel("Iteraciones")
 plt.ylabel("Valor de la Función Objetivo")
 plt.title("Valor de la Función Objetivo por Iteración")
-plt.show()
 plt.savefig("Comparativa.png")
+plt.show()
+
 #----------------------------------------------
