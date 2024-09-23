@@ -108,12 +108,6 @@ m.update()
 m.setParam("Outputflag",0)
 m.optimize()
 
-#---------------------------
-# resultados parte A
-#--------------------------
-
-
-
 
 #----------------------------------------------
 # Funciones auxiliares
